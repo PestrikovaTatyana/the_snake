@@ -31,7 +31,7 @@ STONE_COLOR = (211, 211, 211)
 POISON_COLOR = (255, 255, 0)
 
 # Скорость движения змейки:
-SPEED = 20
+SPEED = 2
 
 # Начальная длина змейки:
 START_LENGTH = 1
@@ -119,7 +119,7 @@ class Snake(GameObject):
 
     def __init__(
             self,
-            positions: list[tuple] = [(CENTER_ABSCISSA, CENTER_ORDINATE)],
+            positions: list[tuple] | tuple = (None,),
             position: tuple = (CENTER_ABSCISSA, CENTER_ORDINATE),
             body_color: tuple = SNAKE_COLOR,
             length: int = START_LENGTH,
@@ -131,8 +131,8 @@ class Snake(GameObject):
                          position)
         self.position = position
         self.body_color = body_color
-        self.positions = positions
-        self.positions.append(self.position)
+        self.positions = list(positions)
+        self.positions[0] = position
         self.length = length
         self.direction = direction
         self.next_direction = next_direction
