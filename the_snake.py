@@ -119,7 +119,7 @@ class Snake(GameObject):
 
     def __init__(
             self,
-            positions: list[tuple] = [],
+            positions: list[tuple] = list(),
             position: tuple = (CENTER_ABSCISSA, CENTER_ORDINATE),
             body_color: tuple = SNAKE_COLOR,
             length: int = START_LENGTH,
@@ -179,11 +179,8 @@ class Snake(GameObject):
         головы до отрисовки змейки.
         """
         modul = (SCREEN_WIDTH, SCREEN_HEIGHT)
-        new_head = tuple(map(lambda x, y, modul: (x + y * GRID_SIZE) % modul,
-                             self.get_head_position(),
-                             self.direction,
-                             modul))
-        return new_head
+        return tuple(map(lambda x, y, modul: (x + y * GRID_SIZE) % modul,
+                         self.get_head_position(), self.direction, modul))
 
     def move(self):
         """Обновление положения змейки."""
