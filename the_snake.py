@@ -119,7 +119,7 @@ class Snake(GameObject):
 
     def __init__(
             self,
-            positions: list[tuple] = list(),
+            positions: list[tuple] = [(CENTER_ABSCISSA, CENTER_ORDINATE)],
             position: tuple = (CENTER_ABSCISSA, CENTER_ORDINATE),
             body_color: tuple = SNAKE_COLOR,
             length: int = START_LENGTH,
