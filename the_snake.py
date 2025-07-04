@@ -54,7 +54,7 @@ directions = {
 class GameObject:
     """Родительский класс для всех объектов игры."""
 
-    _busy_cells: list = [(BOARD_CENTER),]
+    _busy_cells: list = [(BOARD_CENTER), ]
 
     def __init__(
             self,
@@ -113,7 +113,7 @@ class Snake(GameObject):
             body_color: tuple = SNAKE_COLOR
     ):
         super().__init__(body_color)
-        self.positions: list[tuple] = [(BOARD_CENTER),]
+        self.positions: list[tuple] = [(BOARD_CENTER), ]
         self.length: int = 1
         self.direction: tuple = RIGHT
         self.trace: tuple | None = None
@@ -168,19 +168,19 @@ class Snake(GameObject):
         self.direction = choice((UP, RIGHT, DOWN, LEFT))
 
 
-def save_score(filename: str, score: int):
+def save_score(data_set_name: str, score: int):
     """Создает файл и сохраняет в него результат лучшей игры."""
-    file = open(filename, 'w')
-    file.write('Лучший результат:  ' + str(score))
+    data_set = open(data_set_name, 'w')
+    data_set.write('Лучший результат:  ' + str(score))
 
 
-def read_score(filename):
+def read_score(data_set_name):
     """Чтение лучшего результата или сообщение о том, что
     игра первая.
     """
     high_score = 'Это Ваша первая игра!'
     try:
-        with open(filename, 'r') as f:
+        with open(data_set_name, 'r') as f:
             for line in f:
                 try:
                     high_score = line.strip()
