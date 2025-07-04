@@ -78,7 +78,7 @@ class GameObject:
 class Apple(GameObject):
     """Дочерний класс для экземпляров stone, poison, apple."""
 
-    def resite_position(self):
+    def randomize_position(self):
         """Метод для изменения положения экземпляров Apple,
         сравнение ведется по всем занятым ячейкам аттрибута
         родительского класса GameObject._busy_cells.
@@ -102,7 +102,7 @@ class Apple(GameObject):
     ):
         super().__init__(body_color)
         self.body_color = body_color
-        self.resite_position()
+        self.randomize_position()
 
 
 class Snake(GameObject):
@@ -228,7 +228,7 @@ def update_game(snake_obj: Snake, items: list[Apple]):
 
     snake_obj.reset()
     for item in items:
-        item.resite_position()
+        item.randomize_position()
     return SPEED
 
 
@@ -254,13 +254,13 @@ def main():
         match snake.positions[0]:
             case apple.position:
                 snake.length += 1
-                apple.resite_position()
+                apple.randomize_position()
                 # Плавное изменение скорости по логарифму.
                 speed = int(SPEED * log(3 + snake.length / 4))
             case poison.position:
                 snake.length -= 1
                 if snake.length > 0:
-                    poison.resite_position()
+                    poison.randomize_position()
                 else:
                     speed = update_game(snake, items)
             case stone.position:
