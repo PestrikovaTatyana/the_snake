@@ -54,7 +54,7 @@ directions = {
 class GameObject:
     """Родительский класс для всех объектов игры."""
 
-    _busy_cells: list = [(BOARD_CENTER), ]
+    _busy_cells: list = [(BOARD_CENTER)]
 
     def __init__(
             self,
@@ -113,7 +113,7 @@ class Snake(GameObject):
             body_color: tuple = SNAKE_COLOR
     ):
         super().__init__(body_color)
-        self.positions: list[tuple] = [(BOARD_CENTER), ]
+        self.positions: list[tuple] = [(BOARD_CENTER)]
         self.length: int = 1
         self.direction: tuple = RIGHT
         self.trace: tuple | None = None
