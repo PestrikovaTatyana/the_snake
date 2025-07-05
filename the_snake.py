@@ -94,11 +94,11 @@ class Apple(GameObject):
 
     def __init__(
             self,
-            busy_cells: list[tuple] = [BOARD_CENTER],
+            busy_cells: list[tuple] | None = None,
             body_color: tuple = APPLE_COLOR
     ):
         super().__init__(body_color)
-        self.randomize_position(busy_cells)
+        self.randomize_position(busy_cells if busy_cells is not None else [])
 
 
 class Snake(GameObject):
