@@ -4,6 +4,7 @@ from random import choice
 import pygame as pg
 
 # КОД ДЛЯ P2P проверок
+# Эта ветка для внесения правок проверяющим
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 GRID_SIZE = 20
