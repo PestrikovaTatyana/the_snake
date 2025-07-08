@@ -8,7 +8,9 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 GRID_SIZE = 20
 GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
-BOARD_CENTER = (640 // 2, 480 // 2)
+BOARD_CENTER = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+# Константа информационного меню:
+INFO_LINES: str = f'Змейка\n{" " * 4}Нажмите ESC - для выхода{" " * 4}'
 # Направления движения:
 UP = (0, -1)
 DOWN = (0, 1)
@@ -19,7 +21,6 @@ BOARD_BACKGROUND_COLOR = (245, 245, 245)
 BORDER_COLOR = (93, 216, 228)
 APPLE_COLOR = (255, 0, 0)
 SNAKE_COLOR = (0, 255, 0)
-SNAKE_HEAD_COLOR = (0, 135, 0)
 STONE_COLOR = (211, 211, 211)
 POISON_COLOR = (255, 255, 0)
 FONT_COLOR = (40, 40, 40)
@@ -47,7 +48,6 @@ ALL_CELLS = {
 # Настройка игрового окна:
 screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 # Заголовок окна игрового поля:
-INFO_LINES: str = 'Змейка\n     Нажмите ESC - для выхода    '
 pg.display.set_caption(INFO_LINES)
 # Настройка времени:
 clock = pg.time.Clock()
@@ -61,25 +61,25 @@ class GameObject:
             body_color: tuple | None = None,
             position: tuple = BOARD_CENTER
     ):
-        self.position = position
         self.body_color = body_color
+        self.position = position
 
     def draw(self):
-        """Применяется в дочернем классе Snake"""
-        raise NameError(
-            f'Пропущен метод в описании класса'
-            f' {type(self).__name__}.'
-        )
+        """Применяется в дочернем классе Snake."""
+        raise NotImplementedError(f'Пропущен метод в описании класса'
+                                  f' {type(self).__name__}.')
 
     def draw_cell(
             self,
-            position: tuple,
-            color_cell: tuple = SNAKE_COLOR
+            color_cell: tuple,
+            position: tuple
     ):
         """Отрисовывает новое положение объекта."""
         rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))
         pg.draw.rect(screen, color_cell, rect)
-        pg.draw.rect(screen, BORDER_COLOR, rect, 1)
+        # Отрисовка границы применяется только к занятым ячейкам.
+        if color_cell != BOARD_BACKGROUND_COLOR:
+            pg.draw.rect(screen, BORDER_COLOR, rect, 1)
 
 
 class Apple(GameObject):
@@ -87,8 +87,7 @@ class Apple(GameObject):
 
     def randomize_position(self, busy_cells: list[tuple]):
         """Метод для изменения положения экземпляров Apple,
-        сравнение ведется по всем занятым ячейкам snake.positions,
-        apple.position, stone.position, poison.position.
+        сравнение ведется по всем занятым ячейкам.
         """
         self.position = choice(tuple(ALL_CELLS - set(busy_cells)))
 
@@ -98,7 +97,11 @@ class Apple(GameObject):
             body_color: tuple = APPLE_COLOR
     ):
         super().__init__(body_color)
-        self.randomize_position(busy_cells if busy_cells is not None else [])
+        self.randomize_position(busy_cells or [])
+
+    def draw(self):
+        """Метод отрисовки экземпляров stone, poison, apple."""
+        self.draw_cell(self.body_color, self.position)
 
 
 class Snake(GameObject):
@@ -110,24 +113,20 @@ class Snake(GameObject):
     ):
         super().__init__(body_color)
         self.reset()
-        # В задании в первый раз змейка стартует вправо
-        self.direction = RIGHT
+        self.direction = RIGHT  # В первый раз змейка стартует вправо
 
     def get_head_position(self):
-        """Возвращение координат головы змейки."""
+        """Возврат координат головы змейки."""
         return self.positions[0]
 
     def draw(self):
-        """Отрисовка змейки. Ячейки следа отрисовывать не надо,
-        они такого же цвета, как и поле.
-        """
-        # Очищение игрового поля.
-        screen.fill(BOARD_BACKGROUND_COLOR)
-        # Отрисовка тела змейки.
-        for position in self.positions[1:]:
-            self.draw_cell(position)
+        """Отрисовка змейки. Затирание следа."""
         # Отрисовка головы змейки.
-        self.draw_cell(self.get_head_position(), SNAKE_HEAD_COLOR)
+        self.draw_cell(SNAKE_COLOR, self.get_head_position())
+        # Затирание следа змейки. Если нашла яблоко self.last==[]
+        # и ячейка не затирается.
+        while self.last:
+            self.draw_cell(BOARD_BACKGROUND_COLOR, self.last.pop())
 
     def update_direction(self, new_direction):
         """Метод обновления направления после нажатия на кнопку."""
@@ -137,7 +136,7 @@ class Snake(GameObject):
         """Получение кортежа новой головы. Используется в self.move()."""
         return tuple(map(
             lambda x, y, modul:
-            (x + y * GRID_SIZE) % modul,
+                (x + y * GRID_SIZE) % modul,
             self.get_head_position(),
             self.direction,
             (SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -146,37 +145,40 @@ class Snake(GameObject):
     def move(self):
         """Обновление положения змейки."""
         self.positions.insert(0, self.get_new_head())
+        # Покинутые змеёй ячейки складываем в self.last.
+        # Если просто ползет или попала в камень - одна ячейка,
+        # если столкнулась с ядом - две,
+        # если нашла яблоко self.last не пополняется.
+        # Нужен методу Snake.draw, где такие ячейки затираются.
         while self.length < len(self.positions):
-            self.traces.append(self.positions.pop())
-        self.traces = [self.get_head_position()]
+            self.last.append(self.positions.pop())
 
-    def reset(self):
+    def reset(self) -> None:
         """Возврат змейки в исходное состояние, старт с
         другого направления движения.
         """
-        # Откатить изменяемые в ходе игры настройки к первоначальным.
+        # Задает стартовое направление движения случайным образом.
+        # Устанавливает настройки змейки в первоначальные.
+        self.direction = choice((UP, RIGHT, DOWN, LEFT))
         self.positions = [BOARD_CENTER]
         self.length = 1
-        self.traces = [BOARD_CENTER]
-        # Задание стартового направления движения случайным образом.
-        self.direction = choice((UP, RIGHT, DOWN, LEFT))
+        self.last: list[tuple[int, int]] = []
 
 
 def save_score(data_set_name: str, score: int):
-    """Создает файл и сохраняет в него результат лучшей игры."""
+    """Сохраняет в файл результат лучшей игры."""
     data_set = open(data_set_name, 'w')
     data_set.write(str(score))
 
 
 def read_score(data_set_name='score.txt', high_score: int = 0):
-    """Чтение лучшего результата или сообщение о том, что
-    игра первая.
-    """
+    """Чтение лучшего результата из файла."""
+    # Если файл не может быть прочитан или в файле не число,
+    # то лучшим результатом принять результат текущей сессии игр.
     try:
         with open(data_set_name, 'r') as f:
-            for line in f:
-                return int(line.strip().isdigit())
-            return high_score
+            if line := next(f, '').strip():
+                return int(line) if line.isdigit() else high_score
     except (FileNotFoundError, PermissionError, ValueError):
         return high_score
 
@@ -203,6 +205,9 @@ def update_game(snake: Snake, items: list[Apple], high_score: int):
     """Сохранение рекордного результата. Перезапуск игры с новой
     расстановкой предметов и маленькой змейкой в центре.
     """
+    # Очистка поля
+    screen.fill(BOARD_BACKGROUND_COLOR)
+
     # Сравнение текущего результата с рекордным, запись нового рекорда.
     if high_score < snake.length:
         save_score('score.txt', snake.length)
@@ -210,8 +215,8 @@ def update_game(snake: Snake, items: list[Apple], high_score: int):
 
     snake.reset()
     for index, item in enumerate(items):
-        item.randomize_position(
-            [*snake.positions, *(items[i].position for i in range(index))])
+        item_busy_positions = [items[num].position for num in range(index)]
+        item.randomize_position([*snake.positions, *item_busy_positions])
     return SPEED, high_score
 
 
@@ -237,34 +242,32 @@ def main():
         handle_keys(snake)
         snake.move()
 
-        match snake.get_head_position():
-            case apple.position:
-                snake.length += 1
-                apple.randomize_position(
-                    [
-                        *snake.positions,
-                        *(items[i].position for i in range(3))
-                    ]
-                )
-                # Плавное изменение скорости по логарифму.
-                speed = int(SPEED * log(3 + snake.length / 4))
-            case poison.position:
-                snake.length -= 1
-                if snake.length > 0:
-                    poison.randomize_position(
-                        [
-                            *snake.positions,
-                            *(items[i].position for i in range(3))
-                        ]
-                    )
-                else:
-                    speed, high_score = update_game(snake, items, high_score)
-            case _ as hd if hd == stone.position or hd in snake.positions[4:]:
+        head_pos = snake.get_head_position()
+
+        # Объединенная обработка встречи змейки с яблоком или ядом.
+        if head_pos in (apple.position, poison.position):
+            # Создаю список занятых ячеек. Голова змеи или в яблоке, или в яде,
+            # поэтому по змее беру срез, чтобы не задваивать голову.
+            busy = [*snake.positions[1:], *(item.position for item in items)]
+            delta = 1 if head_pos == apple.position else -1
+            snake.length += delta
+            (apple if delta > 0 else poison).randomize_position(busy)
+            speed = int(SPEED * log(3 + snake.length / 4))
+
+            if snake.length == 0:            # Погибла от яда
+                # Сбрасываю скорость, проверяю счет, перезапускаю игру.
                 speed, high_score = update_game(snake, items, high_score)
 
+        # Условия завершения игры.
+        elif any((
+            head_pos == stone.position,      # Угодила в камень
+            head_pos in snake.positions[4:]  # Откусила хвост
+        )):
+            # Сбрасываю скорость, проверяю счет, перезапускаю игру.
+            speed, high_score = update_game(snake, items, high_score)
+
         snake.draw()
-        for item in items:
-            item.draw_cell(item.position, item.body_color)
+        [item.draw() for item in items]
         pg.display.set_caption(f'{INFO_LINES} Лучший результат: {high_score}')
         pg.display.update()
 
